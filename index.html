@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gestión de Emergencias - Bomberos Colombia</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+        crossorigin=""
+    >
+</head>
+<body>
+    <div class="container">
+        <div class="app-shell">
+            <div class="app-shell__meta">
+                <span class="app-badge">Centro de Operaciones</span>
+                <span class="app-status" id="system-status">Sistema listo</span>
+            </div>
+            <div class="app-shell__actions">
+                <button type="button" class="btn btn-outline" id="fullscreen-btn">Pantalla completa</button>
+                <button type="button" class="btn btn-outline" id="new-record-btn">Nueva emergencia</button>
+            </div>
+        </div>
+        <header>
+            <h1>Sistema de Gestión de Emergencias</h1>
+            <p>Bomberos de Colombia</p>
+            <div class="header-summary">
+                <div class="summary-card">
+                    <span class="summary-card__label">Total registros</span>
+                    <strong class="summary-card__value" id="stat-total">0</strong>
+                </div>
+                <div class="summary-card">
+                    <span class="summary-card__label">Hoy</span>
+                    <strong class="summary-card__value" id="stat-today">0</strong>
+                </div>
+                <div class="summary-card">
+                    <span class="summary-card__label">Con coordenadas</span>
+                    <strong class="summary-card__value" id="stat-geolocated">0</strong>
+                </div>
+                <div class="summary-card">
+                    <span class="summary-card__label">Último registro</span>
+                    <strong class="summary-card__value summary-card__value--small" id="stat-last">Sin datos</strong>
+                </div>
+            </div>
+        </header>
+        
+        <nav>
+            <ul>
+                <li><a href="#" class="active">Ingreso de Emergencias</a></li>
+                <li><a href="#" id="view-records">Ver Registros</a></li>
+                <li><a href="#" id="export-excel">Exportar a Excel</a></li>
+                <li><a href="#" id="export-monthly">Exportar por Mes</a></li>
+                <li><a href="#" id="export-backup">Exportar Copia de Seguridad</a></li>
+                <li><a href="#" id="import-backup">Importar Copia de Seguridad</a></li>
+            </ul>
+        </nav>
+        
+        <main>
+            <section id="emergency-form-section" class="active-section">
+                <div class="section-heading">
+                    <div>
+                        <h2>Ingreso de Datos de Emergencia</h2>
+                        <p>Captura operativa con borrador automático y ubicación georreferenciada.</p>
+                    </div>
+                    <span class="section-chip">Modo captura</span>
+                </div>
+                <form id="emergency-form" novalidate>
+                    <div class="form-intro">
+                        <p>Completa primero los datos principales para registrar la emergencia con menos errores.</p>
+                    </div>
+                    <div class="form-feedback" id="form-feedback" hidden aria-live="polite"></div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="fecha">Fecha:</label>
+                            <input type="date" id="fecha" required>
+                            <small class="help-text">Debe corresponder a la fecha real de la atencion.</small>
+                        </div>  
+                        <div class="form-group">
+                            <label for="hora">Hora:</label>
+                            <input type="time" id="hora" required>
+                            <small class="help-text">Usa formato de 24 horas.</small>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="municipio">Municipio:</label>
+                            <input type="text" id="municipio" required maxlength="80" autocomplete="address-level2">
+                        </div>
+                        <div class="form-group">
+                            <label for="tipo-incidente">Tipo de Incidente:</label>
+                            <select id="tipo-incidente" required>
+                                <option value="">Seleccione un tipo...</option>
+                                <option value="incendio">Incendio</option>
+                                <option value="explosion">Explosión</option>
+                                <option value="inspeccion">Inspección</option>
+                                <option value="despeje-vial">Despeje Vial</option>
+                                <option value="control-hidrocarburos">Control de Hidrocarburos</option>
+                                <option value="control-abejas">Control de Abejas</option>
+                                <option value="accidente-transito">Accidente de Tránsito</option>
+                                <option value="atencion-paciente">Atención a Paciente</option>
+                                <option value="rescate">Rescate</option>
+                                <option value="fuga">Fuga</option>
+                                <option value="derrame">Derrame</option>
+                                <option value="deslizamiento">Deslizamiento</option>
+                                <option value="desfile">Desfile</option>
+                                <option value="simulacro">Simulacro</option>
+                                <option value="suministro-agua">Suministro de Agua</option>
+                                <option value="entrega-ayudas">Entrega de Ayudas</option>
+                                <option value="censo">Censo</option>
+                                <option value="otro">Otro</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="entidad-apoyo">Entidad que Apoya:</label>
+                            <input type="text" id="entidad-apoyo" maxlength="80">
+                        </div>
+                        <div class="form-group">
+                            <label for="nombre-atendio">Nombre del que Atiende:</label>
+                            <input type="text" id="nombre-atendio" placeholder="Ej: Carlos Ramírez" maxlength="80" autocomplete="name">
+                        </div>
+                        <div class="form-group">
+                            <label for="rango-atendio">Rango:</label>
+                            <input type="text" id="rango-atendio" placeholder="Ej: Sargento" maxlength="50">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="nombre-paciente">Nombre del Paciente Afectado:</label>
+                            <input type="text" id="nombre-paciente" maxlength="80" autocomplete="name">
+                        </div>
+                        <div class="form-group">
+                            <label for="identificacion-paciente">Identificación del Paciente:</label>
+                            <input type="text" id="identificacion-paciente" inputmode="numeric" maxlength="20" placeholder="Solo numeros">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="edad">Edad:</label>
+                            <input type="number" id="edad" min="0" max="120">
+                        </div>
+                        <div class="form-group">
+                            <label for="sexo">Sexo:</label>
+                            <select id="sexo">
+                                <option value="">Seleccione...</option>
+                                <option value="masculino">Masculino</option>
+                                <option value="femenino">Femenino</option>
+                                <option value="otro">Otro</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="barrio-vereda">Barrio o Vereda:</label>
+                            <input type="text" id="barrio-vereda" maxlength="80">
+                        </div>
+                        <div class="form-group">
+                            <label for="direccion">Dirección:</label>
+                            <input type="text" id="direccion" maxlength="120" autocomplete="street-address">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group full-width">
+                            <label for="mapa-ubicacion">Coordenadas de la Emergencia:</label>
+                            <div class="location-card">
+                                <div class="form-row location-fields">
+                                    <div class="form-group">
+                                        <label for="latitud">Latitud:</label>
+                                        <input type="number" id="latitud" step="any" placeholder="Ej: 4.7110">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="longitud">Longitud:</label>
+                                        <input type="number" id="longitud" step="any" placeholder="Ej: -74.0721">
+                                    </div>
+                                    <div class="form-group location-action">
+                                        <button type="button" class="btn btn-outline" id="usar-ubicacion">Usar mi ubicación</button>
+                                    </div>
+                                </div>
+                                <p class="help-text">Puedes escribir las coordenadas o seleccionar el punto directamente en el mapa.</p>
+                                <div id="mapa-ubicacion" class="map-container" aria-label="Mapa para seleccionar coordenadas"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="telefono">Teléfono:</label>
+                            <input type="tel" id="telefono" inputmode="tel" maxlength="20" placeholder="Ej: 3001234567">
+                        </div>
+                        <div class="form-group">
+                            <label for="total-afectados">Total de Afectados:</label>
+                            <input type="number" id="total-afectados" min="0" max="999">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="perdidas">Pérdidas (descripción):</label>
+                            <input type="text" id="perdidas" maxlength="120">
+                        </div>
+                        <div class="form-group">
+                            <label for="unidades">Unidades:</label>
+                            <input type="text" id="unidades" maxlength="120">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="departamento">Departamento de Colombia:</label>
+                            <select id="departamento" required>
+                                <option value="">Seleccione un departamento...</option>
+                                <option value="Amazonas">Amazonas</option>
+                                <option value="Antioquia">Antioquia</option>
+                                <option value="Arauca">Arauca</option>
+                                <option value="Atlántico">Atlántico</option>
+                                <option value="Bogotá D.C.">Bogotá D.C.</option>
+                                <option value="Bolívar">Bolívar</option>
+                                <option value="Boyacá">Boyacá</option>
+                                <option value="Caldas">Caldas</option>
+                                <option value="Caquetá">Caquetá</option>
+                                <option value="Casanare">Casanare</option>
+                                <option value="Cauca">Cauca</option>
+                                <option value="Cesar">Cesar</option>
+                                <option value="Chocó">Chocó</option>
+                                <option value="Córdoba">Córdoba</option>
+                                <option value="Cundinamarca">Cundinamarca</option>
+                                <option value="Guainía">Guainía</option>
+                                <option value="Guaviare">Guaviare</option>
+                                <option value="Huila">Huila</option>
+                                <option value="La Guajira">La Guajira</option>
+                                <option value="Magdalena">Magdalena</option>
+                                <option value="Meta">Meta</option>
+                                <option value="Nariño">Nariño</option>
+                                <option value="Norte de Santander">Norte de Santander</option>
+                                <option value="Putumayo">Putumayo</option>
+                                <option value="Quindío">Quindío</option>
+                                <option value="Risaralda">Risaralda</option>
+                                <option value="San Andrés y Providencia">San Andrés y Providencia</option>
+                                <option value="Santander">Santander</option>
+                                <option value="Sucre">Sucre</option>
+                                <option value="Tolima">Tolima</option>
+                                <option value="Valle del Cauca">Valle del Cauca</option>
+                                <option value="Vaupés">Vaupés</option>
+                                <option value="Vichada">Vichada</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="codigo-emergencia">Código de Emergencia:</label>
+                            <input type="text" id="codigo-emergencia" placeholder="Ej: EMRG-2026-001" maxlength="30">
+                            <small class="help-text">Se genera automaticamente si lo dejas vacio.</small>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="vehiculos">Vehículos:</label>
+                            <input type="text" id="vehiculos" placeholder="Ej: Máquina extintora, ambulancia" maxlength="120">
+                        </div>
+                        <div class="form-group">
+                            <label for="observaciones">Observaciones:</label>
+                            <textarea id="observaciones" placeholder="Detalles adicionales de la emergencia" maxlength="600"></textarea>
+                            <small class="help-text">Maximo 600 caracteres.</small>
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary">Guardar Emergencia</button>
+                        <button type="reset" class="btn-secondary">Limpiar Formulario</button>
+                    </div>
+                </form>
+            </section>
+            
+            <section id="records-section">
+                <div class="section-heading">
+                    <div>
+                        <h2>Registros de Emergencias</h2>
+                        <p>Consulta, filtra y administra las atenciones registradas.</p>
+                    </div>
+                    <span class="section-chip" id="records-count-label">0 registros</span>
+                </div>
+                <div class="records-toolbar">
+                    <div class="records-toolbar__search">
+                        <label for="records-search">Búsqueda rápida</label>
+                        <input type="search" id="records-search" placeholder="Buscar por código, municipio, paciente o incidente">
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table id="records-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Código de Emergencia</th>
+                                <th>Hora</th>
+                                <th>Municipio</th>
+                                <th>Departamento</th>
+                                <th>Tipo de Incidente</th>
+                                <th>Entidad de Apoyo</th>
+                                <th>Paciente</th>
+                                <th>Total Afectados</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="records-table-body">
+                            <!-- Records will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+        
+        <footer>
+            <p>&copy; 2026 Sistema de Gestión de Emergencias - Bomberos Colombia</p>
+        </footer>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script
+        src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+        crossorigin=""
+    ></script>
+    <script src="js/app.js"></script>
+    <script src="js/backup.js"></script>
+</body>
+</html>

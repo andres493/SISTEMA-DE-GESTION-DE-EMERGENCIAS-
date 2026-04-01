@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Data for Bomberos System</title>
+</head>
+<body>
+    <h1>Test Data Creator</h1>
+    <button id="create-test-data">Create Test Emergency Record</button>
+    <div id="result"></div>
+    
+    <script>
+        document.getElementById('create-test-data').addEventListener('click', function() {
+            // Clear any existing data
+            localStorage.removeItem('bomberosEmergencias');
+            
+            // Create test data for current month
+            const testData = {
+                fecha: '2026-03-22',
+                hora: '14:30',
+                municipio: 'Medellín',
+                tipoIncidente: 'incendio',
+                entidadApoyo: 'Policía Nacional',
+                nombrePaciente: 'Juan Pérez',
+                identificacionPaciente: '12345678',
+                edad: '35',
+                sexo: 'masculino',
+                barrioVereda: 'El Poblado',
+                direccion: 'Carrera 43 #10-15',
+                telefono: '3001234567',
+                totalAfectados: '2',
+                perdidas: 'Daños estructurales en vivienda',
+                unidades: '2 unidades de bomberos',
+                vehiculos: '1 unidad de rescate, 1 unidad de agua',
+                departamento: 'Antioquia',
+                codigoEmergencia: 'EMRG-2026-001',
+                observaciones: 'Incendio controlado sin lesionados',
+                timestamp: new Date().toISOString()
+            };
+            
+            // Save to localStorage
+            const emergencies = [testData];
+            localStorage.setItem('bomberosEmergencias', JSON.stringify(emergencies));
+            
+            // Show result
+            document.getElementById('result').innerHTML = '<p style="color: green;">Test data created successfully!</p>';
+            document.getElementById('result').innerHTML += '<p>Now open index.html to see the record.</p>';
+            
+            // Also add a second record for testing monthly export
+            const testData2 = {
+                fecha: '2026-03-15',
+                hora: '09:15',
+                municipio: 'Bogotá D.C.',
+                tipoIncidente: 'accidente-transito',
+                entidadApoyo: 'Policía Nacional',
+                nombrePaciente: 'María González',
+                identificacionPaciente: '87654321',
+                edad: '28',
+                sexo: 'femenino',
+                barrioVereda: 'Chapinero',
+                direccion: 'Carrera 15 #120-30',
+                telefono: '3109876543',
+                totalAfectados: '1',
+                perdidas: 'Vehículo perdido',
+                unidades: '1 unidad de ambulancia',
+                vehiculos: '1 ambulancia',
+                departamento: 'Bogotá D.C.',
+                codigoEmergencia: 'EMRG-2026-002',
+                observaciones: 'Accidente de tránsito leve',
+                timestamp: new Date(Date.now() - 86400000).toISOString() // Yesterday
+            };
+            
+            emergencies.push(testData2);
+            localStorage.setItem('bomberosEmergencias', JSON.stringify(emergencies));
+        });
+    </script>
+</body>
+</html>
